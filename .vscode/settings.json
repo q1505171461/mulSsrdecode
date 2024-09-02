@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "*.py": "python",
+        "*.bin": "binary",
+        "regex.h": "c",
+        "string.h": "c",
+        "rtklib.h": "c",
+        "tcore.h": "c",
+        "stdarg.h": "c",
+        "array": "c",
+        "string": "c",
+        "correct.h": "c",
+        "stdio.h": "c",
+        "ssr.h": "c",
+        "time.h": "c",
+        "istream": "c",
+        "ostream": "c",
+        "stdint.h": "c",
+        "math.h": "c",
+        "stdlib.h": "c",
+        "cstdlib": "c",
+        "type_traits": "c",
+        "io_b2b.h": "c",
+        "typeinfo": "c"
+    }
+}

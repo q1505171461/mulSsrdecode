@@ -1,0 +1,110 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug pppb2bEncode",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/encode/debug/pppb2bEncode",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build pppb2bEncode",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug pppb2bDecode",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/decode/debug/pppb2bDecode",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build pppb2bDecode",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug qzssDecode",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ssrdecode/debug/test_qzss",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build ssrDecode",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug kplDecode",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ssrdecode/debug/test_kpl",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build ssrDecode",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug b2bDecode",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ssrdecode/debug/test_b2b",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build ssrDecode",
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}
