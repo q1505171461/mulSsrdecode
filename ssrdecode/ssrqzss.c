@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "correct.h"
-#include "ssr.h"
+#include "ssr_.h"
 
 int code_index[6][16] = {{1, 2, 3, 7, 8, 0, 16, 17, 18, 19, 20, 24, 25, 26, 0, 0},
                          {1, 2, 14, 19, 66, 67, 68, 0, 0, 0, 44, 45, 46, 0, 0, 0},
@@ -459,7 +459,12 @@ int decode_qzssr_type4(ssrctx_t *sc)
                 return iodssr_not_match(sc);
             sc->ssr_epoch[i].t0[4] = get_t0(sc);
             if (prn_sig2codeindex(i, j) >= 0)
+            {
                 sc->ssr_epoch[i].cbias[prn_sig2codeindex(i, j)] = cbias;
+                sc->ssr_epoch[i].f_cbias[prn_sig2codeindex(i, j)] = 1;
+                double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
+                sc->ssr_epoch[i].t0[4] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+            }
         }
     }
     sc->qbuff_beg += offset;
@@ -510,7 +515,12 @@ int decode_qzssr_type6(ssrctx_t *sc)
                 if (sc->IODSSR != sc->last_iodssr)
                     return iodssr_not_match(sc);
                 if (prn_sig2codeindex(i, j) >= 0)
-                    sc->ssr_epoch[i].cbias[prn_sig2codeindex(i, j)] = cbias;
+                {
+                    sn->ssr_epoch[i].cbias[prn_sig2codeindex(i, j)] = cbias;
+                    sn->ssr_epoch[i].f_cbias[prn_sig2codeindex(i, j)] = 1;
+                    double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
+                    sn->ssr_epoch[i].t0[4] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+                }
             }
             if (pbias_existing_flag)
             {
@@ -520,8 +530,12 @@ int decode_qzssr_type6(ssrctx_t *sc)
                 int phase_discontinuity_ndicator1 = q_offset_bits(sc, &offset, 2);
                 if (sc->IODSSR != sc->last_iodssr)
                     return iodssr_not_match(sc);
-                if (prn_sig2codeindex(i, j) >= 0)
+                if (prn_sig2codeindex(i, j) >= 0){
                     sc->ssr_epoch[i].pbias[prn_sig2codeindex(i, j)] = pbias;
+                    sc->ssr_epoch[i].f_pbias[prn_sig2codeindex(i, j)] = 1;
+                    double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
+                    sc->ssr_epoch[i].t0[5] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+                }
             }
         }
     }

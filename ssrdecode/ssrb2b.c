@@ -1,4 +1,4 @@
-#include "ssr.h"
+#include "ssr_.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -284,8 +284,8 @@ static void decode_b2bssr_type1(ssrctx_t *sc)
     for (int i = 0; i < 255; i++)
     {
         sc->maskb2b[i] = get_bits(sc->buff, 33 + i, 1);
-        int a= mask2qzss(i);
-        if (mask2qzss(i)>-1)
+        int a = mask2qzss(i);
+        if (mask2qzss(i) > -1)
             sc->mask[mask2qzss(i)] = sc->maskb2b[i];
         sc->n_sat += sc->maskb2b[i] ? 1 : 0;
     }
@@ -359,11 +359,12 @@ static int decode_b2bssr_type3(ssrctx_t *sc)
         {
             int i_c_type = b_offset_bits(sc, &offset, 4);
             uint16_t codebias_v = b_offset_bits(sc, &offset, 12);
-            int code = obs2code(tracking_modes[isys][i_c_type]);
+            int code = obs2code3(tracking_modes[isys][i_c_type]);
             if (code == CODE_NONE)
                 continue;
             sc->ssr_epoch[isat].iod[4] = iodssr;
             sc->ssr_epoch[isat].cbias[code - 1] = uint64_to_int64(codebias_v, 12) * 0.017;
+            sc->ssr_epoch[isat].f_cbias[code - 1] = 1;
         }
     }
     return 3;
@@ -421,7 +422,7 @@ static ssrctx_t *get_ssr_ctx_prn(ssrctx_t *sc)
 
 int decode_b2b(ssrctx_t *user_ssr_ctx, int prn)
 {
-    if(prn!=60)return 0;
+    // if(prn!=60)return 0;
     user_ssr_ctx->prn = prn;
     if (!crc_bit462_check(user_ssr_ctx->buff))
     {
@@ -430,8 +431,7 @@ int decode_b2b(ssrctx_t *user_ssr_ctx, int prn)
     }
     ssrctx_t *sc = get_ssr_ctx_prn(user_ssr_ctx);
     int type = get_bits(user_ssr_ctx->buff, 0, 6);
-    printf("%d\n", type);
-     switch (type)
+    switch (type)
     {
     case 1:
         decode_b2bssr_type1(sc);
@@ -464,7 +464,6 @@ void u32tbyte_kx(uint32_t data, uint8_t *buff, int idx)
         (buff[i + idx] = data >> ((3 - i % 4) * 8)) & 0xFF;
 }
 
-
 extern int input_b2bssr(ssrctx_t *sc, unsigned char data)
 {
     uint16_t tmp, i, j;
@@ -483,7 +482,7 @@ extern int input_b2bssr(ssrctx_t *sc, unsigned char data)
     sc->buff[sc->nbyte++] = data;
     if (sc->nbyte == 60) // 486/8
     {
-        decode_b2b(sc,1);
+        decode_b2b(sc, 1);
         sc->nbyte = 0;
         memset(sc->buff, 0, SSRCTX_BUFFLEN);
         return 1;

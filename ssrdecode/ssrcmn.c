@@ -1,4 +1,4 @@
-#include "ssr.h"
+#include "ssr_.h"
 #include <time.h>
 #include <math.h>
 #include <stdio.h>
@@ -346,7 +346,7 @@ static char *obscodes[] = {
     "6E", "7D", "7P", "7Z", "8D", "8P", "4A", "4B", "4X", ""    /* 60-69 */
 };
 
-extern uint8_t obs2code(const char *obs)
+uint8_t obs2code3(const char *obs)
 {
     for (int i = 1; *obscodes[i]; i++)
     {
@@ -356,7 +356,7 @@ extern uint8_t obs2code(const char *obs)
     }
     return CODE_NONE;
 }
-extern char *code2obs(uint8_t code)
+static char *code2obs(uint8_t code)
 {
     if (code <= CODE_NONE || MAXCODE < code)
         return "";
@@ -428,10 +428,23 @@ void print_ssr(ssrctx_t *sc)
         }
 
         /* clk */
-        printf(" clk:%9.4f", sc->ssr_epoch[i].dclk[0]);
+        if (sc->ssr_epoch[i].t0[1].time)
+            printf(" clk:%9.4f", sc->ssr_epoch[i].dclk[0]);
 
         /* ura */
+        if (sc->ssr_epoch[i].t0[3].time)
         printf(" ura:%8.2f", sc->ssr_epoch[i].ura);
+
+        /* pbias */
+        if (sc->ssr_epoch[i].t0[5].time)
+        {
+            printf(" pbias:");
+            for (int j = 0; j < MAXCODE; ++j)
+            {
+                if (sc->ssr_epoch[i].f_pbias[j])
+                    printf("%s %9.4f ", code2obs(j + 1), sc->ssr_epoch[i].pbias[j]);
+            }
+        }
 
         /* cbias */
         if (sc->ssr_epoch[i].t0[4].time)
@@ -439,7 +452,7 @@ void print_ssr(ssrctx_t *sc)
             printf(" cbias:");
             for (int j = 0; j < MAXCODE; ++j)
             {
-                if (sc->ssr_epoch[i].cbias[j] != 0)
+                if (sc->ssr_epoch[i].f_cbias[j])
                     printf("%s %9.4f ", code2obs(j + 1), sc->ssr_epoch[i].cbias[j]);
             }
         }

@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <errno.h>
 #include "ssr.h"
 
 int loadb2bpost_kx(char *line, char *buff)
@@ -36,8 +35,6 @@ int b2bdecodepost_kx(char *b2bfile_kx)
         {
             decode_b2b(&ssr_ctx, prn);
             print_ssr(&ssr_ctx);
-            ssr_ctx.nbyte = 0;
-            memset(ssr_ctx.buff, 0, SSRCTX_BUFFLEN);
         }
     }
     fclose(fb2bpost);

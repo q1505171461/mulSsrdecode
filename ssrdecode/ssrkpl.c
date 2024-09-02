@@ -1,4 +1,4 @@
-#include "ssr.h"
+#include "ssr_.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -14,6 +14,21 @@ static const char *ptracking_modes[NUM_SYSTEMS][8] = {
     {"1I", "2W", "XX", "XX", "XX", "XX", "XX", "XX"},
     {"1X", "2X", "5Q", "7Q", "XX", "XX", "XX", "XX"},
 };
+
+static int mask2qzss(uint16_t i)
+{
+    if (i < 40)
+        return i + 120;
+    if (i < 63)
+        return i + 200;
+    if (i < 100)
+        return i - 63;
+    if (i < 137)
+        return i - 20;
+    if (i < 174)
+        return i - 97;
+    return -1;
+}
 
 uint64_t k_offset_bits(ssrctx_t *sc, int *i_beg, int len)
 {
@@ -137,11 +152,13 @@ static void decoding_type1(ssrctx_t *sc, int bit_begin)
     sc->IODSSR = k_offset_bits(sc, &bit_begin, 2);
     sc->IODP = k_offset_bits(sc, &bit_begin, 4);
     sc->BDT = adjdoy(t_now, bdt);
-
+    memset(sc->mask, 0, sizeof(sc->mask));
     for (int i = 0; i < 255; i++)
     {
-        sc->mask[i] = k_offset_bits(sc, &bit_begin, 1);
-        sc->n_sat += sc->mask[i] ? 1 : 0;
+        sc->maskb2b[i] = k_offset_bits(sc, &bit_begin, 1);
+        sc->n_sat += sc->maskb2b[i] ? 1 : 0;
+        if (mask2qzss(i)> -1)
+            sc->mask[mask2qzss(i)] = sc->maskb2b[i];
     }
     sc->lvalid = 1;
 }
@@ -170,7 +187,7 @@ static int decoding_type3(ssrctx_t *sc, int bit_begin)
     {
         for (; j < 255; ++j)
         {
-            if (sc->mask[j])
+            if (sc->maskb2b[j])
                 break;
         }
         int isys = slot2isys(j);
@@ -180,10 +197,14 @@ static int decoding_type3(ssrctx_t *sc, int bit_begin)
             char cprn[8] = {0};
             slot2prn(j, cprn);
             int i_c_type = k_offset_bits(sc, &bit_begin, 4);
-            int code = obs2code(tracking_modes[isys][i_c_type]);
+            int code = obs2code3(tracking_modes[isys][i_c_type]);
             uint16_t codebias_v = k_offset_bits(sc, &bit_begin, 12);
             // printf("saving code bias for %s %d %d %s\n", cprn, j, i_c_type, code2obs(code));
-            sc->ssr_epoch[j].cbias[code - 1] = uint64_to_int64(codebias_v, 12) * 0.017;
+            if (!code)
+                continue;
+            sc->ssr_epoch[mask2qzss(j)].cbias[code - 1] = uint64_to_int64(codebias_v, 12) * 0.017;
+            sc->ssr_epoch[mask2qzss(j)].f_cbias[code - 1] = 1;
+            sc->ssr_epoch[mask2qzss(j)].t0[4] = adjdoy(sc->BDT, bdt);
         }
     }
     return num_sat;
@@ -264,25 +285,26 @@ static void decoding_type6(ssrctx_t *sc, int bitbegin)
             n_pbias = n_pbias % 8;
             for (; j < 255; ++j)
             {
-                if (sc->mask[j])
+                if (sc->maskb2b[j])
                     break;
             }
-            sc->ssr_epoch[j].t0[1] = adjdoy(sc->BDT, bdt);
-            sc->ssr_epoch[j].dclk[0] = uint64_to_int64(corr, 15) * 0.0016;
-            sc->ssr_epoch[j].IODCorr = iodcorr;
-            sc->ssr_epoch[j].iod[1] = iodp;
-            sc->ssr_epoch[j].iod[4] = iodp;
-            sc->ssr_epoch[j].t0[4] = sc->ssr_epoch[j].t0[1];
+            int q_satslot = mask2qzss(j);
+            sc->ssr_epoch[q_satslot].t0[1] = adjdoy(sc->BDT, bdt);
+            sc->ssr_epoch[q_satslot].dclk[0] = uint64_to_int64(corr, 15) * 0.0016;
+            sc->ssr_epoch[q_satslot].IODCorr = iodcorr;
+            sc->ssr_epoch[q_satslot].iod[1] = iodp;
+            sc->ssr_epoch[q_satslot].iod[4] = iodp;
             for (int k = 0; k < n_pbias; k++)
             {
                 uint8_t pbias_type = get_bits(encoded_data, n_used_bits + 21 + k * 15, 3);
                 uint16_t pbias_v = get_bits(encoded_data, n_used_bits + 24 + k * 15, 12);
                 int isys = slot2isys(j);
-                int code = obs2code(ptracking_modes[isys][pbias_type]);
+                int code = obs2code3(ptracking_modes[isys][pbias_type]);
                 if (code == 0)
                     continue;
-                sc->ssr_epoch[j].pbias[code - 1] = uint64_to_int64(pbias_v, 12) * 0.017;
-                sc->ssr_epoch[j].i_pbias[code - 1] = 1;
+                sc->ssr_epoch[q_satslot].pbias[code - 1] = uint64_to_int64(pbias_v, 12) * 0.017;
+                sc->ssr_epoch[q_satslot].f_pbias[code - 1] = 1;
+                sc->ssr_epoch[q_satslot].t0[5] = sc->ssr_epoch[q_satslot].t0[1];
             }
             n_used_bits += 21 + n_pbias * 15;
         }
@@ -311,154 +333,17 @@ static void decoding_type6(ssrctx_t *sc, int bitbegin)
             uint8_t URAL_CLASS = get_bits(encoded_data, index_code + 69 * i + 86, 3);
             uint8_t URAL_VALUE = get_bits(encoded_data, index_code + 69 * i + 89, 3);
 
-            sc->ssr_epoch[j].t0[0] = adjdoy(sc->BDT, bdt);
-            sc->ssr_epoch[j].IODCorr = IODCorr;
-            sc->ssr_epoch[j].iode = IODN;
-            sc->ssr_epoch[j].deph[0] = uint64_to_int64(radialCorr, 15) * 0.0016;
-            sc->ssr_epoch[j].deph[1] = uint64_to_int64(tangentialCorr, 13) * 0.0064;
-            sc->ssr_epoch[j].deph[2] = uint64_to_int64(normalCorr, 13) * 0.0064;
-        }
-    }
-}
-/* merge current sc */
-// static void mergeB2bCorr(ssrctx_t *sc)
-// {
-//     int n_clk = 0, n_orbit = 0;
-//     char cprn[8] = {0};
-//     memset(sc->ssr_epoch, 0, sizeof(sc->ssr_epoch));
-//     /* merge current orbit corrections */
-//     for (int isat = 0; isat < MAXSSRSAT; ++isat)
-//     {
-//         if (sc->orbit[isat].IODSSR != sc->IODSSR)
-//             continue;
-//         if (sc->BDT.time == 0 || fabs(timediff(sc->BDT, sc->orbit[isat].bdt)) > MAXAGE_ORBIT)
-//             continue;
-//         memcpy(sc->ssr_epoch[isat].deph, sc->orbit[isat].cor, sizeof(double) * 3);
-//         sc->ssr_epoch[isat].IODN = sc->orbit[isat].IODN;
-//         sc->ssr_epoch[isat].IODCorr = sc->orbit[isat].IODCorr;
-//         ++n_orbit;
-//     }
-//     /* merge current clock corrections */
-//     for (int isat = 0; isat < MAXSSRSAT; ++isat)
-//     {
-//         if (!sc->mask[isat])
-//             continue;
-//         if (sc->clk[isat].IODSSR != sc->IODSSR || sc->clk[isat].iodp != sc->IODP)
-//             continue;
-//         if (sc->BDT.time == 0 || fabs(timediff(sc->BDT, sc->clk[isat].bdt)) > MAXAGE_CLK)
-//         {
-//             /* not matched */
-//             printf("clk time not matched for %s %f\n", slot2prn(isat, cprn), timediff(sc->BDT, sc->clk[isat].bdt));
-//             sc->ssr_epoch[isat].update = 0;
-//             continue;
-//         }
-//         if (sc->clk[isat].IODCorr != sc->orbit[isat].IODCorr)
-//         {
-//             /* not matched */
-//             printf("orbit not matched for %s\n", slot2prn(isat, cprn));
-//             sc->ssr_epoch[isat].update = 0;
-//             continue;
-//         }
-//         /* matched the orbit */
-//         sc->ssr_epoch[isat].update = 1;
-//         sc->ssr_epoch[isat].t0 = sc->clk[isat].bdt;
-//         sc->ssr_epoch[isat].clk_c = sc->clk[isat].clk[0];
-//         ++n_clk;
-//     }
-
-//     /* merge current cbias corrections */
-//     for (int isat = 0; isat < MAXSSRSAT; ++isat)
-//     {
-//         if (sc->cbias[isat].IODSSR != sc->IODSSR)
-//             continue;
-//         if (sc->BDT.time == 0 || fabs(timediff(sc->BDT, sc->clk[isat].bdt)) > MAXAGE_CBIAS)
-//             continue;
-//         for (int i = 0; i < MAXCODE; i++)
-//         {
-//             sc->ssr_epoch[isat].cbias[i] = sc->cbias[isat].cbias[i];
-//         }
-//     }
-
-//     /* merge current pbias corrections */
-//     for (int isat = 0; isat < MAXSSRSAT; ++isat)
-//     {
-//         if (sc->pbias[isat].IODSSR != sc->IODSSR)
-//             continue;
-//         if (sc->BDT.time == 0 || fabs(timediff(sc->BDT, sc->clk[isat].bdt)) > MAXAGE_PBIAS)
-//             continue;
-//         if (sc->pbias[isat].IODCorr != sc->orbit[isat].IODCorr)
-//             continue;
-//         for (int i = 0; i < MAXCODE; i++)
-//         {
-//             sc->ssr_epoch[isat].pbias[i] = sc->pbias[isat].pbias[i];
-//         }
-//     }
-//     #define MAXSSRAREA 10
-//     /* merge current ssr_network */
-//     for (int iarea = 0; iarea < MAXSSRAREA; ++iarea)
-//     {
-//         sc->ssr_network[iarea].update = 0;
-//         if (sc->ssr_network[iarea].t0.time == 0 || fabs(timediff(sc->BDT, sc->ssr_network[iarea].t0)) > MAXAGE_CBIAS)
-//             continue;
-//         sc->ssr_network[iarea].update = 1;
-//     }
-//     printf("received %02d %02d\n", n_orbit, n_clk);
-// }
-/* output current sc */
-void b2b2str(ssrctx_t *sc)
-{
-    char str[1024] = {0}, cprn[8] = {0};
-    printf("------------SSR DECODED INFORMATION ------------------\n");
-    time2str(sc->BDT, str, 2);
-    printf("type1time:%s\n", str);
-    for (int isat = 0; isat < MAXSSRSAT; ++isat)
-    {
-        if (sc->ssr_epoch[isat].update == 0)
-            continue;
-        /* output current decode information */
-        slot2prn(isat, cprn);
-        time2str(sc->ssr_epoch[isat].t0, str, 2);
-        printf("%s %s : %03d(iod) %9.3lf %9.3lf %9.3lf(orbit) %9.3lf(clk)", cprn, str,
-               sc->ssr_epoch[isat].iode,
-               sc->ssr_epoch[isat].deph[0],
-               sc->ssr_epoch[isat].deph[1],
-               sc->ssr_epoch[isat].deph[2],
-               sc->ssr_epoch[isat].dclk[0]);
-        printf(" pbias:");
-        for (int i = 0; i < MAXCODE; i++)
-        {
-            if (sc->ssr_epoch[isat].pbias[i] != 0.0)
-                printf(" %9.3lf (%s)", sc->ssr_epoch[isat].pbias[i], code2obs(i + 1));
-        }
-
-        printf(" cbias:");
-        for (int i = 0; i < MAXCODE; i++)
-        {
-            if (sc->ssr_epoch[isat].cbias[i] != 0.0)
-                printf(" %9.3lf (%s)", sc->ssr_epoch[isat].cbias[i], code2obs(i + 1));
-        }
-        printf("\n");
-    }
-    printf("ssr_network:\n");
-    for (int i = 0; i < MAXB2BAREA; i++)
-    {
-        ssr_network_t *sn = get_ssr_network(sc, i);
-        if (sn->cnid != 0){
-            char str[1024];
-            time2str(sn->t0, str, 3);
-            printf("%s %02d(flag) %9.3lf(sigma)", str, sn->cnid, sn->sigma);
-            double *rect = sn->rect;
-            printf(" rect: %9.3lf %9.3lf %9.3lf %9.3lf %9.3lf", rect[0], rect[1], rect[2], rect[3]);
-            printf(" mcoeff: ");
-            for (int j = 0; j< sn->coeff_num; j++){
-                // printf(" %9.3lf", sn->mcoeff[j]);
-            }
-            printf("\n");
+            int q_satslot = mask2qzss(satslot-1);
+            sc->ssr_epoch[q_satslot].t0[0] = adjdoy(sc->BDT, bdt);
+            sc->ssr_epoch[q_satslot].IODCorr = IODCorr;
+            sc->ssr_epoch[q_satslot].iode = IODN;
+            sc->ssr_epoch[q_satslot].deph[0] = uint64_to_int64(radialCorr, 15) * 0.0016;
+            sc->ssr_epoch[q_satslot].deph[1] = uint64_to_int64(tangentialCorr, 13) * 0.0064;
+            sc->ssr_epoch[q_satslot].deph[2] = uint64_to_int64(normalCorr, 13) * 0.0064;
         }
     }
 }
 
-#include <stdio.h>
 int decode_ssr(ssrctx_t *sc)
 {
     int bitbegin = 14;
@@ -486,10 +371,6 @@ int decode_ssr(ssrctx_t *sc)
         break;
     default:
         break;
-    }
-    if (sc->lend && sc->lvalid)
-    {
-        // mergeB2bCorr(sc);
     }
     return sc->lend && sc->lvalid;
 }
