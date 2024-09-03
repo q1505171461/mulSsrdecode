@@ -1,9 +1,8 @@
 #include <stdint.h>
 #include <time.h>
-#include "rtklib.h"
 
 #define MAXCODE 68 /* max number of obs code */
-#define MAXSSRSAT 300
+#define MAXSSRSAT 280
 #define MAXB2BAREA 10
 #define MAXLEAPS 60
 #define B2B_SYS "CGRE"
@@ -20,9 +19,13 @@
 #define QZSSSIGNUM 16
 #define QZSS_UPDATE_INTERVALS {1, 2, 5, 10, 15, 30, 60, 120, 240, 300, 600, 900, 1800, 3600, 7200, 10800};
 
+typedef struct {        /* time struct */
+    time_t time;        /* time (s) expressed by standard time_t */
+    double sec;         /* fraction of second under 1 s */
+} gtime_t2;
 typedef struct
 {                    /* SSR correction type */
-    gtime_t t0[5];   /* epoch time (GPST) {eph,clk,hrclk,ura,bias} */
+    gtime_t2 t0[5];   /* epoch time (GPST) {eph,clk,hrclk,ura,bias} */
     double udi[5];   /* SSR update interval (s) */
     int iod[5];      /* iod ssr {eph,clk,hrclk,ura,bias} */
     int iode;        /* issue of data */
@@ -59,7 +62,7 @@ typedef struct
     double sigma;
     double rect[4];
 
-    gtime_t t0;
+    gtime_t2 t0;
     int networkcorr; /* Type11 Network Correction */
     int tavail;
     int cnid;
@@ -77,14 +80,14 @@ typedef struct
     int mask_st12[MAXSSRSAT]; /* 掩码 */
     int mask_st11[MAXSSRSAT]; /* 掩码 */
     int mask_st6[MAXSSRSAT];  /* 掩码 */
-    ssr_t ssr_epoch[MAXSSRSAT];
+    ssr_t2 ssr_epoch[MAXSSRSAT];
 } ssr_network_t;
 
 typedef struct
 {
     unsigned char buff[SSRCTX_BUFFLEN]; /* binary data */
     int nbyte;                          /* number of bits in word buffer */
-    gtime_t BDT;                        // 北斗时天内秒
+    gtime_t2 BDT;                        // 北斗时天内秒
     uint8_t IODSSR;                     // SSR 版本号 2bit
     uint8_t IODP;                       // 掩码版本号 4bit
     uint16_t IODN;                      // 基本导航电文版本号 10bit
