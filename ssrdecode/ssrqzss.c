@@ -427,8 +427,7 @@ int decode_qzssr_type3(ssrctx_t *sc)
         double clk = uint64_to_int64(q_offset_bits(sc, &offset, 15), 15) * 0.0016;
         if (sc->IODSSR != sc->last_iodssr || sc->lvalid == 0)
             return iodssr_not_match(sc);
-        double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
-        sc->ssr_epoch[i].t0[1] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+        sc->ssr_epoch[i].t0[1] = get_t0(sc);
         sc->ssr_epoch[i].dclk[0] = clk;
         sc->ssr_epoch[i].update = 1;
     }
@@ -437,7 +436,7 @@ int decode_qzssr_type3(ssrctx_t *sc)
     return 3;
 }
 
-int decode_qzssr_type4(ssrctx_t *sc)
+int decode_qzssr_type4(ssrctx_t *sc, int w_flag)
 {
     decode_qzssr_head(sc);
     int offset = 37;
@@ -457,13 +456,11 @@ int decode_qzssr_type4(ssrctx_t *sc)
             double cbias = uint64_to_int64(q_offset_bits(sc, &offset, 11), 11) * 0.02;
             if (sc->IODSSR != sc->last_iodssr)
                 return iodssr_not_match(sc);
-            sc->ssr_epoch[i].t0[4] = get_t0(sc);
-            if (prn_sig2codeindex(i, j) >= 0)
+            if (prn_sig2codeindex(i, j) >= 0 && w_flag)
             {
                 sc->ssr_epoch[i].cbias[prn_sig2codeindex(i, j)] = cbias;
                 sc->ssr_epoch[i].f_cbias[prn_sig2codeindex(i, j)] = 1;
-                double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
-                sc->ssr_epoch[i].t0[4] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+                sc->ssr_epoch[i].t0[4] = get_t0(sc);
             }
         }
     }
@@ -480,7 +477,7 @@ int decode_qzssr_type5(ssrctx_t *sc)
     return 0;
 }
 
-int decode_qzssr_type6(ssrctx_t *sc)
+int decode_qzssr_type6(ssrctx_t *sc, int w_flag)
 {
     decode_qzssr_head(sc);
     int offset = 37;
@@ -491,6 +488,9 @@ int decode_qzssr_type6(ssrctx_t *sc)
     int network_correction = q_offset_bits(sc, &offset, 1);
     int cnid = q_offset_bits(sc, &offset, 5);
     ssr_network_t *sn = get_ssr_network(sc, cnid);
+    ssr_network_t sn_fakery = {0};
+    if (!w_flag)
+        sn = &sn_fakery;
     if (!is_bufflen_enough(sc, offset + set_snmask(sc, sn->mask_st6, offset)))
         return 0;
     offset += set_snmask(sc, sn->mask_st6, offset);
@@ -531,10 +531,9 @@ int decode_qzssr_type6(ssrctx_t *sc)
                 if (sc->IODSSR != sc->last_iodssr)
                     return iodssr_not_match(sc);
                 if (prn_sig2codeindex(i, j) >= 0){
-                    sc->ssr_epoch[i].pbias[prn_sig2codeindex(i, j)] = pbias;
-                    sc->ssr_epoch[i].f_pbias[prn_sig2codeindex(i, j)] = 1;
-                    double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
-                    sc->ssr_epoch[i].t0[5] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+                    sn->ssr_epoch[i].pbias[prn_sig2codeindex(i, j)] = pbias;
+                    sn->ssr_epoch[i].f_pbias[prn_sig2codeindex(i, j)] = 1;
+                    sn->ssr_epoch[i].t0[5] = get_t0(sc);
                 }
             }
         }
@@ -555,8 +554,7 @@ int decode_qzssr_type7(ssrctx_t *sc)
         double ura = q_offset_bits(sc, &offset, 6);
         if (sc->IODSSR != sc->last_iodssr)
             return iodssr_not_match(sc);
-        double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
-        sc->ssr_epoch[i].t0[3] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
+        sc->ssr_epoch[i].t0[3] = get_t0(sc);
         sc->ssr_epoch[i].ura = ura2dist(ura);
     }
     sc->qbuff_beg += offset;
@@ -584,7 +582,7 @@ int decode_qzssr_type10(ssrctx_t *sc)
     return 0;
 }
 
-int decode_qzssr_type11(ssrctx_t *sc)
+int decode_qzssr_type11(ssrctx_t *sc, int w_flag)
 {
     decode_qzssr_head(sc);
     int offset = 37;
@@ -597,6 +595,9 @@ int decode_qzssr_type11(ssrctx_t *sc)
     int cnid = q_offset_bits(sc, &offset, 5);
 
     ssr_network_t *sn = get_ssr_network(sc, cnid);
+    ssr_network_t sn_fakery = {0};
+    if (!w_flag)
+        sn = &sn_fakery;
     sn->networkcorr = network_correction;
     if (!is_bufflen_enough(sc, offset + set_snmask(sc, sn->mask_st11, offset)))
         return 0;
@@ -611,7 +612,7 @@ int decode_qzssr_type11(ssrctx_t *sc)
                 return iodssr_not_match(sc);
             if (!is_bufflen_enough(sc, offset + prn2sys(i) == 2 ? 51 : 49))
                 return 0;
-            sn->ssr_epoch[i].t0[0] = timeadd(gpsts2gtime(sc->gps_epoch_t), diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t));
+            sn->ssr_epoch[i].t0[0] = get_t0(sc);
             sn->ssr_epoch[i].iode = q_offset_bits(sc, &offset, prn2sys(i) == 2 ? 10 : 8);
             sn->ssr_epoch[i].deph[0] = uint64_to_int64(q_offset_bits(sc, &offset, 15), 15) * 0.0016;
             sn->ssr_epoch[i].deph[1] = uint64_to_int64(q_offset_bits(sc, &offset, 13), 13) * 0.0064;
@@ -631,7 +632,7 @@ int decode_qzssr_type11(ssrctx_t *sc)
     return 11;
 }
 
-int decode_qzssr_type12(ssrctx_t *sc)
+int decode_qzssr_type12(ssrctx_t *sc, int w_flag)
 {
     decode_qzssr_head(sc);
     int offset = 37;
@@ -659,84 +660,87 @@ int decode_qzssr_type12(ssrctx_t *sc)
         return 0;
     }
 
-    ssr_network_t *snc = get_ssr_network(sc, cnid);
-    snc->tavail = tavail;
-    snc->savail = savail;
-    if (snc->tavail & 1)
+    ssr_network_t *sn = get_ssr_network(sc, cnid);
+    ssr_network_t sn_fakery = {0};
+    if (!w_flag)
+        sn = &sn_fakery; 
+    sn->tavail = tavail;
+    sn->savail = savail;
+    if (sn->tavail & 1)
     {
         if (!is_bufflen_enough(sc, offset + 6 + 2 + 9))
             return 0;
-        snc->ura = ura2dist(q_offset_bits(sc, &offset, 6));                   // 对流层质量指示
-        snc->tctype = q_offset_bits(sc, &offset, 2);                          // 对流层校正类型
-        snc->t00 = uint64_to_int64(q_offset_bits(sc, &offset, 9), 9) * 0.004; // 对流层多项式系数
+        sn->ura = ura2dist(q_offset_bits(sc, &offset, 6));                   // 对流层质量指示
+        sn->tctype = q_offset_bits(sc, &offset, 2);                          // 对流层校正类型
+        sn->t00 = uint64_to_int64(q_offset_bits(sc, &offset, 9), 9) * 0.004; // 对流层多项式系数
 
-        if (1 <= snc->tctype)
+        if (1 <= sn->tctype)
         {
             if (!is_bufflen_enough(sc, offset + 14))
                 return 0;
-            snc->t01 = uint64_to_int64(q_offset_bits(sc, &offset, 7), 7) * 0.002;
-            snc->t10 = uint64_to_int64(q_offset_bits(sc, &offset, 7), 7) * 0.002;
+            sn->t01 = uint64_to_int64(q_offset_bits(sc, &offset, 7), 7) * 0.002;
+            sn->t10 = uint64_to_int64(q_offset_bits(sc, &offset, 7), 7) * 0.002;
         }
-        if (2 <= snc->tctype)
+        if (2 <= sn->tctype)
         {
             if (!is_bufflen_enough(sc, offset + 7))
                 return 0;
-            snc->t11 = uint64_to_int64(q_offset_bits(sc, &offset, 7), 7) * 0.001;
+            sn->t11 = uint64_to_int64(q_offset_bits(sc, &offset, 7), 7) * 0.001;
         }
     }
 
-    if (snc->tavail >> 1 & 1)
+    if (sn->tavail >> 1 & 1)
     {
         if (!is_bufflen_enough(sc, offset + 5))
             return 0;
         uint8_t trs = q_offset_bits(sc, &offset, 1);       // 对流层残差大小
         double tro = q_offset_bits(sc, &offset, 4) * 0.02; // 对流层残差偏移
         int bw = trs ? 8 : 6;
-        snc->tro = tro;
-        snc->ngrid = ngrid;
+        sn->tro = tro;
+        sn->ngrid = ngrid;
 
-        for (int grid = 0; grid < snc->ngrid; grid++)
+        for (int grid = 0; grid < sn->ngrid; grid++)
         {
             if (!is_bufflen_enough(sc, offset + bw))
                 return 0;
-            snc->tr[grid] = uint64_to_int64(q_offset_bits(sc, &offset, bw), bw) * 0.004; // 对流层残差
+            sn->tr[grid] = uint64_to_int64(q_offset_bits(sc, &offset, bw), bw) * 0.004; // 对流层残差
         }
     }
 
-    if (snc->savail & 1)
+    if (sn->savail & 1)
     {
-        if (!is_bufflen_enough(sc, offset + set_snmask(sc, snc->mask_st12, offset)))
+        if (!is_bufflen_enough(sc, offset + set_snmask(sc, sn->mask_st12, offset)))
             return 0;
-        offset += set_snmask(sc, snc->mask_st12, offset);
+        offset += set_snmask(sc, sn->mask_st12, offset);
         for (int i = 0; i < MAXSSRSAT; i++)
         {
-            if (!snc->mask_st12[i])
+            if (!sn->mask_st12[i])
                 continue;
             if (!is_bufflen_enough(sc, offset + 6 + 2 + 14))
                 return 0;
-            snc->ssr_epoch[i].stura = ura2dist(q_offset_bits(sc, &offset, 6));                  // STEC 质量指示
-            snc->ssr_epoch[i].sctype = q_offset_bits(sc, &offset, 2);                           // STEC 校正类型
-            snc->ssr_epoch[i].c00 = uint64_to_int64(q_offset_bits(sc, &offset, 14), 14) * 0.05; // STEC 多项式系数
-            if (1 <= snc->ssr_epoch[i].sctype)
+            sn->ssr_epoch[i].stura = ura2dist(q_offset_bits(sc, &offset, 6));                  // STEC 质量指示
+            sn->ssr_epoch[i].sctype = q_offset_bits(sc, &offset, 2);                           // STEC 校正类型
+            sn->ssr_epoch[i].c00 = uint64_to_int64(q_offset_bits(sc, &offset, 14), 14) * 0.05; // STEC 多项式系数
+            if (1 <= sn->ssr_epoch[i].sctype)
             {
                 if (!is_bufflen_enough(sc, offset + 12 + 12))
                     return 0;
-                snc->ssr_epoch[i].c01 = uint64_to_int64(q_offset_bits(sc, &offset, 12), 12) * 0.02;
-                snc->ssr_epoch[i].c10 = uint64_to_int64(q_offset_bits(sc, &offset, 12), 12) * 0.02;
+                sn->ssr_epoch[i].c01 = uint64_to_int64(q_offset_bits(sc, &offset, 12), 12) * 0.02;
+                sn->ssr_epoch[i].c10 = uint64_to_int64(q_offset_bits(sc, &offset, 12), 12) * 0.02;
             }
 
-            if (2 <= snc->ssr_epoch[i].sctype)
+            if (2 <= sn->ssr_epoch[i].sctype)
             {
                 if (!is_bufflen_enough(sc, offset + 10))
                     return 0;
-                snc->ssr_epoch[i].c11 = uint64_to_int64(q_offset_bits(sc, &offset, 10), 10) * 0.02;
+                sn->ssr_epoch[i].c11 = uint64_to_int64(q_offset_bits(sc, &offset, 10), 10) * 0.02;
             }
-            if (3 <= snc->ssr_epoch[i].sctype)
+            if (3 <= sn->ssr_epoch[i].sctype)
             {
                 if (!is_bufflen_enough(sc, offset + 16))
                     return 0;
-                snc->ssr_epoch[i].c02 = uint64_to_int64(q_offset_bits(sc, &offset, 8), 8) * 0.005;
-                snc->ssr_epoch[i].c20 = uint64_to_int64(q_offset_bits(sc, &offset, 8), 8) * 0.005;
+                sn->ssr_epoch[i].c02 = uint64_to_int64(q_offset_bits(sc, &offset, 8), 8) * 0.005;
+                sn->ssr_epoch[i].c20 = uint64_to_int64(q_offset_bits(sc, &offset, 8), 8) * 0.005;
             }
             uint8_t srs = q_offset_bits(sc, &offset, 2);
             int bw = (srs == 0) ? 4 : (srs == 1) ? 4
@@ -746,11 +750,11 @@ int decode_qzssr_type12(ssrctx_t *sc)
                          : (srs == 1) ? 0.12
                          : (srs == 2) ? 0.16
                                       : 0.24;
-            for (int grid = 0; grid < snc->ngrid; grid++)
+            for (int grid = 0; grid < sn->ngrid; grid++)
             {
                 if (!is_bufflen_enough(sc, offset + bw))
                     return 0;
-                snc->ssr_epoch[i].sr[grid] = uint64_to_int64(q_offset_bits(sc, &offset, bw), bw) * lsb;
+                sn->ssr_epoch[i].sr[grid] = uint64_to_int64(q_offset_bits(sc, &offset, bw), bw) * lsb;
             }
         }
     }
@@ -877,11 +881,11 @@ int switch_msg(ssrctx_t *sc)
     case 3:
         return decode_qzssr_type3(sc);
     case 4:
-        return decode_qzssr_type4(sc);
+        return decode_qzssr_type4(sc, 1);
     case 5:
         return decode_qzssr_type5(sc);
     case 6:
-        return decode_qzssr_type6(sc);
+        return decode_qzssr_type6(sc, 1);
     case 7:
         return decode_qzssr_type7(sc);
     case 8:
@@ -891,9 +895,9 @@ int switch_msg(ssrctx_t *sc)
     case 10:
         return decode_qzssr_type10(sc);
     case 11:
-        return decode_qzssr_type11(sc);
+        return decode_qzssr_type11(sc, 1);
     case 12:
-        return decode_qzssr_type12(sc);
+        return decode_qzssr_type12(sc, 1);
     default:
         return decode_qzssr_type_other(sc);
     }

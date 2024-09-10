@@ -108,7 +108,6 @@ int main()
     // file = fopen("res/QZSS-2", "rb");
     if (file == NULL)
         return 1;
-
     unsigned char data;
     ssrctx_t ssr_ctx = {0};
     printf("%d,%d\n", sizeof(ssrctx_t), 32 * sizeof(ssr_network_t));
