@@ -355,6 +355,9 @@ int decode_ssr(ssrctx_t *sc)
         printf("error: CRC检验失败。");
         return 0;
     }
+    char *tm[100];
+    time2str(timeget(), tm, 2);
+    printf("%s recive message %d.\n", tm, code_type);
     switch (code_type)
     {
     case 1:

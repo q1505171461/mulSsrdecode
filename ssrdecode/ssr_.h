@@ -235,6 +235,7 @@ uint8_t obs2code3(const char *obs);
 gtime_t bdt2gpst(gtime_t t);
 double timediff(gtime_t t1, gtime_t t2);
 double time2gpst(gtime_t t, int *week);
+void time2str(gtime_t t, char *s, int n);
 gtime_t gpst2time(int week, double sec);
 void prn2str(int prn, char *prnstr);
 void print_ssr(ssrctx_t *sc);

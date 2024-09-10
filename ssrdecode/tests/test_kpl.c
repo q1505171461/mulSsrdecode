@@ -77,7 +77,7 @@ void print_data(const unsigned char *data, size_t length) {
 void *decode_test()
 {
     stream_t ntripconn_r;
-    ntripinit("ntripcli://wszcs001:123456@119.96.165.202:8500/PPPB2B22", &ntripconn_r);
+    ntripinit("ntripcli://wszcs001:123456@ssr.kplgnss.com:8070/KPLB2B", &ntripconn_r);
     ssrctx_t bcnx = {0};
     uint8_t buff[4024];
     while (1)
