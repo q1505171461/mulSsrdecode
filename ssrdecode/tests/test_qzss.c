@@ -110,7 +110,6 @@ int main()
         return 1;
     unsigned char data;
     ssrctx_t ssr_ctx = {0};
-    printf("%d,%d\n", sizeof(ssrctx_t), 32 * sizeof(ssr_network_t));
     while (fread(&data, 1, 1, file) == 1)
     {
         if (input_qzssr(&ssr_ctx, data))

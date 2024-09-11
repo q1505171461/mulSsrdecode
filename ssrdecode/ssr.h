@@ -3,29 +3,22 @@
 
 #define MAXCODE 68 /* max number of obs code */
 #define MAXSSRSAT 280
-#define MAXB2BAREA 10
-#define MAXLEAPS 60
-#define B2B_SYS "CGRE"
 #define SSRCTX_BUFFLEN 256
-#define MAXAGE_ORBIT 96
-#define MAXAGE_CLK 100
-#define MAXAGE_PBIAS 100
-#define MAXAGE_CBIAS 86400
 #define MAXCOEFFNUM 10
-#define MAXGNSSYS 6
 #define MAXSIG 180
 #define MAXNETWORK 32 /* Compact Network ID */
 #define MAXGRID 50
 #define QZSSSIGNUM 16
-#define QZSS_UPDATE_INTERVALS {1, 2, 5, 10, 15, 30, 60, 120, 240, 300, 600, 900, 1800, 3600, 7200, 10800};
 
-typedef struct {        /* time struct */
-    time_t time;        /* time (s) expressed by standard time_t */
-    double sec;         /* fraction of second under 1 s */
+typedef struct
+{                /* time struct */
+    time_t time; /* time (s) expressed by standard time_t */
+    double sec;  /* fraction of second under 1 s */
 } gtime_t2;
+
 typedef struct
 {                    /* SSR correction type */
-    gtime_t2 t0[5];   /* epoch time (GPST) {eph,clk,hrclk,ura,bias} */
+    gtime_t2 t0[6];   /* epoch time (GPST) {eph,clk,hrclk,ura,cbias,pbias} */
     double udi[5];   /* SSR update interval (s) */
     int iod[5];      /* iod ssr {eph,clk,hrclk,ura,bias} */
     int iode;        /* issue of data */

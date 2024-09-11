@@ -73,7 +73,7 @@ static int slot2isys(int index)
     return -1;
 }
 /* adjust weekly rollover of GPS time ----------------------------------------*/
-static gtime_t adjdoy(gtime_t t_now, double sod)
+static gtime_t2 adjdoy(gtime_t2 t_now, double sod)
 {
     double ep[6] = {0};
     /* if no time, get cpu time */
@@ -87,7 +87,7 @@ static gtime_t adjdoy(gtime_t t_now, double sod)
     ep[3] = floor(sod / 3600);
     ep[4] = floor((sod - ep[3] * 3600.0) / 60.0);
     ep[5] = fmod(sod, 60.0);
-    gtime_t t_r = epoch2time(ep);
+    gtime_t2 t_r = epoch2time(ep);
     /* compare the two time */
     if (sod_n - sod > 43200.0)
     {
@@ -145,7 +145,7 @@ static uint32_t crc_bit462_check(unsigned char *crcdata)
 
 static void decoding_type1(ssrctx_t *sc, int bit_begin)
 {
-    gtime_t t_now = timeget();
+    gtime_t2 t_now = timeget();
     bit_begin += 6;
     uint32_t bdt = k_offset_bits(sc, &bit_begin, 17);
     bit_begin += 4;
@@ -221,7 +221,7 @@ static int decoding_type8(ssrctx_t *sc, int bit_begin)
         return 0;
     }
     uint32_t bdt = get_bits(encoded_data, bit_begin + 6, 17);
-    gtime_t t0 = adjdoy(timeget(), bdt);
+    gtime_t2 t0 = adjdoy(timeget(), bdt);
     int n_area = get_bits(encoded_data, bit_begin + 23, 2);
     bit_begin += 25;
     for (int i = 0; i < n_area; ++i)

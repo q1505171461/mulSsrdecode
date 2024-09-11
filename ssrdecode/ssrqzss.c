@@ -241,10 +241,10 @@ int iodssr_not_match(ssrctx_t *sc)
     return 0;
 }
 
-gtime_t gpsts2gtime(double sec)
+gtime_t2 gpsts2gtime(double sec)
 {
     int gps_week;
-    gtime_t current_time = utc2gpst(timeget());
+    gtime_t2 current_time = utc2gpst(timeget());
     double gps_seconds = time2gpst(current_time, &gps_week);
     if (gps_seconds > sec)
         return gpst2time(gps_week, sec);
@@ -253,7 +253,7 @@ gtime_t gpsts2gtime(double sec)
 
 double diff_time(double gps_epo_sec, double gnss_hours_sec)
 {
-    gtime_t gps_time = gpsts2gtime(gps_epo_sec);
+    gtime_t2 gps_time = gpsts2gtime(gps_epo_sec);
     double ep[6] = {0};
     time2epoch(gps_time, ep);
     double delta_sec = gnss_hours_sec - (ep[5] + ep[4] * 60);
@@ -277,7 +277,7 @@ uint8_t *get_cell_mask(ssrctx_t *sc, int *i_beg, int len, int cell_mask_flag)
     *i_beg = *i_beg + len;
     return rvl;
 }
-gtime_t get_t0(ssrctx_t *sc)
+gtime_t2 get_t0(ssrctx_t *sc)
 {
     double diff_t = diff_time(sc->gps_epoch_t, sc->gnss_hourly_epoch_t);
     return timeadd(gpsts2gtime(sc->gps_epoch_t), diff_t);
@@ -345,14 +345,14 @@ int decode_qzssr_type1(ssrctx_t *sc)
         return 0;
     }
     initctx(sc);
-    sc->lend++;
-    sc->lvalid = 1;
     sc->message_number = q_get_bits(sc, 0, 12);
     if (sc->message_number != 4073)
     {
         sc->qzss_wait_new_subframe = 1;
         return 0;
     }
+    sc->lend++;
+    sc->lvalid = 1;
     sc->message_sub_type_id = q_get_bits(sc, 12, 4);
     sc->gps_epoch_t = q_get_bits(sc, 16, 20);
     sc->ssr_update_interval = q_get_bits(sc, 36, 4);

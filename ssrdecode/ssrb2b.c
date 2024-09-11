@@ -134,7 +134,7 @@ static const char *tracking_modes[NUM_SYSTEMS][NUM_MODES] = {
     {"1C", "1P", "2C", "XX", "XX", "XX", "XX", "XX", "XX", "XX", "XX", "XX", "XX", "XX", "XX", "XX"},
     {"XX", "1B", "XX", "XX", "5Q", "5I", "XX", "7I", "7Q", "XX", "XX", "6C", "XX", "XX", "XX", "XX"}};
 
-static gtime_t adjdoy(gtime_t t_now, double sod)
+static gtime_t2 adjdoy(gtime_t2 t_now, double sod)
 {
     double ep[6] = {0};
     /* if no time, get cpu time */
@@ -149,7 +149,7 @@ static gtime_t adjdoy(gtime_t t_now, double sod)
     ep[3] = floor(sod / 3600);
     ep[4] = floor((sod - ep[3] * 3600.0) / 60.0);
     ep[5] = fmod(sod, 60.0);
-    gtime_t t_r = epoch2time(ep);
+    gtime_t2 t_r = epoch2time(ep);
     /* compare the two time */
     if (sod_n - sod > 43200.0)
     {
@@ -274,7 +274,7 @@ static int mask2qzss(uint16_t i)
 
 static void decode_b2bssr_type1(ssrctx_t *sc)
 {
-    gtime_t t_now = timeget();
+    gtime_t2 t_now = timeget();
     uint32_t bdt = get_bits(sc->buff, 6, 17);
     sc->BDT = adjdoy(t_now, bdt);
     sc->IODSSR = get_bits(sc->buff, 27, 2);

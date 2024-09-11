@@ -1,28 +1,21 @@
 #include <stdint.h>
 #include <time.h>
+#include "ssr.h"
 
 #define KPLSSR_STRUCT_SIZE 63
-
 #define NUM_SYSTEMS 4
 #define NUM_MODES 16
 #define B2bPREAMB 0xD3
 #define QZSSPREAMB 0x1ACFFC1D
-#define MAXSSRSAT 280
 #define MAXB2BAREA 10
 #define MAXLEAPS 60
 #define B2B_SYS "CGRE"
-#define SSRCTX_BUFFLEN 256
+#define QZSS_UPDATE_INTERVALS {1, 2, 5, 10, 15, 30, 60, 120, 240, 300, 600, 900, 1800, 3600, 7200, 10800};
+
 #define MAXAGE_ORBIT 96
 #define MAXAGE_CLK 100
 #define MAXAGE_PBIAS 100
 #define MAXAGE_CBIAS 86400
-#define MAXCOEFFNUM 10
-#define MAXGNSSYS 6
-#define MAXSIG 180
-#define MAXNETWORK 32 /* Compact Network ID */
-#define MAXGRID 50
-#define QZSSSIGNUM 16
-#define QZSS_UPDATE_INTERVALS {1, 2, 5, 10, 15, 30, 60, 120, 240, 300, 600, 900, 1800, 3600, 7200, 10800};
 
 #define OBSTYPE_PR 0x01  /* observation type: pseudorange */
 #define OBSTYPE_CP 0x02  /* observation type: carrier-phase */
@@ -111,114 +104,6 @@
 
 static double leaps[MAXLEAPS + 1][7];
 
-typedef struct
-{                /* time struct */
-    time_t time; /* time (s) expressed by standard time_t */
-    double sec;  /* fraction of second under 1 s */
-} gtime_t;
-
-typedef struct
-{                    /* SSR correction type */
-    gtime_t t0[6];   /* epoch time (GPST) {eph,clk,hrclk,ura,cbias,pbias} */
-    double udi[5];   /* SSR update interval (s) */
-    int iod[5];      /* iod ssr {eph,clk,hrclk,ura,bias} */
-    int iode;        /* issue of data */
-    int iodcrc;      /* issue of data crc for beidou/sbas */
-    double ura;      /* URA indicator */
-    int refd;        /* sat ref datum (0:ITRF,1:regional) */
-    double deph[3];  /* delta orbit {radial,along,cross} (m) */
-    double ddeph[3]; /* dot delta orbit {radial,along,cross} (m/s) */
-    double dclk[3];  /* delta clock {c0,c1,c2} (m,m/s,m/s^2) */
-    double hrclk;    /* high-rate clock corection (m) */
-    double yaw;
-    int8_t IODCorr;
-    double yawrate;
-    int f_cbias[MAXCODE];
-    float cbias[MAXCODE]; /* code biases (m) */
-    int f_pbias[MAXCODE];
-    double pbias[MAXCODE]; /* phase biases (m) */
-    unsigned char update;  /* update flag (0:no update,1:update) */
-
-    double stura;       /* SSR STEC Quality Indicator */
-    int sctype;         /* STEC Correction Type 0~3 */
-    double c00;         /* STEC Polynomial Coefficients C00 */
-    double c01;         /* STEC Polynomial Coefficients C01 */
-    double c10;         /* STEC Polynomial Coefficients C10 */
-    double c11;         /* STEC Polynomial Coefficients C11 */
-    double c02;         /* STEC Polynomial Coefficients C02 */
-    double c20;         /* STEC Polynomial Coefficients C20 */
-    double sr[MAXGRID]; /* STEC Residual Grid*/
-} ssr_t;
-
-typedef struct
-{ /* SSR grid correction type */
-    int coeff_num;
-    double sigma;
-    double rect[4];
-
-    gtime_t t0;
-    int networkcorr; /* Type11 Network Correction */
-    int tavail;
-    int cnid;
-    double ura;         /* URA indicator */
-    int tctype;         /* Tropospheric Correction Type 0~2 */
-    double t00;         /* Troposphere Polynomial Coefficients T00*/
-    double t01;         /* Troposphere Polynomial Coefficients T01*/
-    double t10;         /* Troposphere Polynomial Coefficients T10*/
-    double t11;         /* Troposphere Polynomial Coefficients T11*/
-    double tro;         /* Troposphere Residual Offset */
-    int ngrid;          /* Tropospheric Residual Length */
-    double tr[MAXGRID]; /* Tropospheric Residual */
-
-    int savail;
-    int mask_st12[MAXSSRSAT]; /* 掩码 */
-    int mask_st11[MAXSSRSAT]; /* 掩码 */
-    int mask_st6[MAXSSRSAT];  /* 掩码 */
-    ssr_t ssr_epoch[MAXSSRSAT];
-} ssr_network_t;
-
-typedef struct
-{
-    unsigned char buff[SSRCTX_BUFFLEN]; /* binary data */
-    int nbyte;                          /* number of bits in word buffer */
-    gtime_t BDT;                        // 北斗时天内秒
-    uint8_t IODSSR;                     // SSR 版本号 2bit
-    uint8_t IODP;                       // 掩码版本号 4bit
-    uint16_t IODN;                      // 基本导航电文版本号 10bit
-    uint8_t IODCorr_f;                  // 改正数版本号 3bit
-
-    int lend;               /* whether exist followed messages */
-    int lvalid;             /* 当前是否mask消息有效 */
-    int n_sat;              /* 当前改正数播发的卫星数 */
-    int mask[MAXSSRSAT];    /* 掩码 */
-    int maskb2b[MAXSSRSAT]; /* 掩码b2b */
-    int mask_sig[MAXSIG];   /* signal mask */
-
-    // QZSS
-    int prn;
-    int gnss_cell_mask[MAXSSRSAT * 16];
-    int cellmask_n;
-    unsigned char qbuff[1500];
-    int qbuff_beg;
-    int qbuff_end;
-    int sub_n;
-    int subframe_indicator; /* QZSS Subframe indicator */
-    int alert_flag;
-    int message_number;      /* Message Number */
-    int message_sub_type_id; /* Message Sub Type ID */
-    int gps_epoch_t;         /* GPS Epoch Time 1s */
-    int gnss_hourly_epoch_t; /* GNSS Hourly Epoch Time */
-    int ssr_update_interval; /* SSR Update Interval */
-    int mul_msg_indicator;   /* mul_msg_indicator */
-    int n_gnss;              /* No. of GNSS */
-    int last_iodssr;
-    int next_need_len;
-    int qzss_wait_new_subframe;
-
-    ssr_t ssr_epoch[MAXSSRSAT];
-    ssr_network_t *ssr_network[MAXNETWORK];
-} ssrctx_t;
-
 uint64_t get_bits(unsigned char *encoded_data, int i_beg, int len);
 ssr_network_t *get_ssr_network(ssrctx_t *sc, int cnid);
 void get_bits_array(uint8_t *encoded_data, int i_beg, int len, uint8_t *output_array);
@@ -226,23 +111,16 @@ int64_t uint64_to_int64(uint64_t value, uint8_t originalLen);
 static uint32_t crc24_pppB2b(uint8_t *data, uint16_t length);
 
 const static double gpst0[] = {1980, 1, 6, 0, 0, 0}; /* gps time reference */
-gtime_t timeadd(gtime_t t, double sec);
-gtime_t epoch2time(const double *ep);
-void time2epoch(gtime_t t, double *ep);
-gtime_t utc2gpst(gtime_t t);
-gtime_t timeget(void);
+gtime_t2 timeadd(gtime_t2 t, double sec);
+gtime_t2 epoch2time(const double *ep);
+void time2epoch(gtime_t2 t, double *ep);
+gtime_t2 utc2gpst(gtime_t2 t);
+gtime_t2 timeget(void);
 uint8_t obs2code3(const char *obs);
-gtime_t bdt2gpst(gtime_t t);
-double timediff(gtime_t t1, gtime_t t2);
-double time2gpst(gtime_t t, int *week);
-void time2str(gtime_t t, char *s, int n);
-gtime_t gpst2time(int week, double sec);
+gtime_t2 bdt2gpst(gtime_t2 t);
+double timediff(gtime_t2 t1, gtime_t2 t2);
+double time2gpst(gtime_t2 t, int *week);
+void time2str(gtime_t2 t, char *s, int n);
+gtime_t2 gpst2time(int week, double sec);
 void prn2str(int prn, char *prnstr);
-void print_ssr(ssrctx_t *sc);
 double ura2dist(uint8_t ura);
-
-extern int input_b2bssr(ssrctx_t *, unsigned char);
-extern int input_kplssr(ssrctx_t *, unsigned char);
-extern int input_qzssr(ssrctx_t *, unsigned char);
-extern int input_galssr(ssrctx_t *, unsigned char);
-extern int index_string(const char *src, char key);

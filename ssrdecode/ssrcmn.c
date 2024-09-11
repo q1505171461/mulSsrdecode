@@ -101,12 +101,12 @@ static double leaps[MAXLEAPS + 1][7] = {/* leap seconds (y,m,d,h,m,s,utc-gpst) *
                                         {0}};
 
 /* add time --------------------------------------------------------------------
- * add time to gtime_t struct
- * args   : gtime_t t        I   gtime_t struct
+ * add time to gtime_t2 struct
+ * args   : gtime_t2 t        I   gtime_t2 struct
  *          double sec       I   time to add (s)
- * return : gtime_t struct (t+sec)
+ * return : gtime_t2 struct (t+sec)
  *-----------------------------------------------------------------------------*/
-extern gtime_t timeadd(gtime_t t, double sec)
+extern gtime_t2 timeadd(gtime_t2 t, double sec)
 {
     double tt;
 
@@ -118,22 +118,22 @@ extern gtime_t timeadd(gtime_t t, double sec)
 }
 
 /* time difference -------------------------------------------------------------
- * difference between gtime_t structs
- * args   : gtime_t t1,t2    I   gtime_t structs
+ * difference between gtime_t2 structs
+ * args   : gtime_t2 t1,t2    I   gtime_t2 structs
  * return : time difference (t1-t2) (s)
  *-----------------------------------------------------------------------------*/
-extern double timediff(gtime_t t1, gtime_t t2)
+extern double timediff(gtime_t2 t1, gtime_t2 t2)
 {
     return difftime(t1.time, t2.time) + t1.sec - t2.sec;
 }
 
 /* utc to gpstime --------------------------------------------------------------
  * convert utc to gpstime considering leap seconds
- * args   : gtime_t t        I   time expressed in utc
+ * args   : gtime_t2 t        I   time expressed in utc
  * return : time expressed in gpstime
  * notes  : ignore slight time offset under 100 ns
  *-----------------------------------------------------------------------------*/
-extern gtime_t utc2gpst(gtime_t t)
+extern gtime_t2 utc2gpst(gtime_t2 t)
 {
     int i;
 
@@ -150,16 +150,16 @@ struct timeval
     __suseconds_t tv_usec; /* Microseconds.  */
 };
 /* convert calendar day/time to time -------------------------------------------
- * convert calendar day/time to gtime_t struct
+ * convert calendar day/time to gtime_t2 struct
  * args   : double *ep       I   day/time {year,month,day,hour,min,sec}
- * return : gtime_t struct
+ * return : gtime_t2 struct
  * notes  : proper in 1970-2037 or 1970-2099 (64bit time_t)
  *-----------------------------------------------------------------------------*/
 
-extern gtime_t epoch2time(const double *ep)
+extern gtime_t2 epoch2time(const double *ep)
 {
     const int doy[] = {1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335};
-    gtime_t time = {0};
+    gtime_t2 time = {0};
     int days, sec, year = (int)ep[0], mon = (int)ep[1], day = (int)ep[2];
 
     if (year < 1970 || 2099 < year || mon < 1 || 12 < mon)
@@ -173,7 +173,7 @@ extern gtime_t epoch2time(const double *ep)
     return time;
 }
 static double timeoffset_ = 0.0;
-extern gtime_t timeget(void)
+extern gtime_t2 timeget(void)
 {
     double ep[6] = {0};
 #ifdef WIN32
@@ -204,13 +204,13 @@ extern gtime_t timeget(void)
 }
 
 /* time to calendar day/time ---------------------------------------------------
- * convert gtime_t struct to calendar day/time
- * args   : gtime_t t        I   gtime_t struct
+ * convert gtime_t2 struct to calendar day/time
+ * args   : gtime_t2 t        I   gtime_t2 struct
  *          double *ep       O   day/time {year,month,day,hour,min,sec}
  * return : none
  * notes  : proper in 1970-2037 or 1970-2099 (64bit time_t)
  *-----------------------------------------------------------------------------*/
-extern void time2epoch(gtime_t t, double *ep)
+extern void time2epoch(gtime_t2 t, double *ep)
 {
     const int mday[] = {/* # of days in a month */
                         31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
@@ -236,14 +236,14 @@ extern void time2epoch(gtime_t t, double *ep)
 }
 
 /* gps time to time ------------------------------------------------------------
- * convert week and tow in gps time to gtime_t struct
+ * convert week and tow in gps time to gtime_t2 struct
  * args   : int    week      I   week number in gps time
  *          double sec       I   time of week in gps time (s)
- * return : gtime_t struct
+ * return : gtime_t2 struct
  *-----------------------------------------------------------------------------*/
-extern gtime_t gpst2time(int week, double sec)
+extern gtime_t2 gpst2time(int week, double sec)
 {
-    gtime_t t = epoch2time(gpst0);
+    gtime_t2 t = epoch2time(gpst0);
 
     if (sec < -1E9 || 1E9 < sec)
         sec = 0.0;
@@ -252,14 +252,14 @@ extern gtime_t gpst2time(int week, double sec)
     return t;
 }
 /* time to gps time ------------------------------------------------------------
- * convert gtime_t struct to week and tow in gps time
- * args   : gtime_t t        I   gtime_t struct
+ * convert gtime_t2 struct to week and tow in gps time
+ * args   : gtime_t2 t        I   gtime_t2 struct
  *          int    *week     IO  week number in gps time (NULL: no output)
  * return : time of week in gps time (s)
  *-----------------------------------------------------------------------------*/
-extern double time2gpst(gtime_t t, int *week)
+extern double time2gpst(gtime_t2 t, int *week)
 {
-    gtime_t t0 = epoch2time(gpst0);
+    gtime_t2 t0 = epoch2time(gpst0);
     time_t sec = t.time - t0.time;
     int w = (int)(sec / (86400 * 7));
 
@@ -268,13 +268,13 @@ extern double time2gpst(gtime_t t, int *week)
     return (double)(sec - w * 86400 * 7) + t.sec;
 }
 /* time to string --------------------------------------------------------------
- * convert gtime_t struct to string
- * args   : gtime_t t        I   gtime_t struct
+ * convert gtime_t2 struct to string
+ * args   : gtime_t2 t        I   gtime_t2 struct
  *          char   *s        O   string ("yyyy/mm/dd hh:mm:ss.ssss")
  *          int    n         I   number of decimals
  * return : none
  *-----------------------------------------------------------------------------*/
-extern void time2str(gtime_t t, char *s, int n)
+extern void time2str(gtime_t2 t, char *s, int n)
 {
     double ep[6];
 
@@ -293,11 +293,11 @@ extern void time2str(gtime_t t, char *s, int n)
 }
 /* bdt to gpstime --------------------------------------------------------------
  * convert bdt (beidou navigation satellite system time) to gpstime
- * args   : gtime_t t        I   time expressed in bdt
+ * args   : gtime_t2 t        I   time expressed in bdt
  * return : time expressed in gpstime
  * notes  : see gpst2bdt()
  *-----------------------------------------------------------------------------*/
-gtime_t bdt2gpst(gtime_t t)
+gtime_t2 bdt2gpst(gtime_t2 t)
 {
     return timeadd(t, 14.0);
 }
