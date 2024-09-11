@@ -2,6 +2,7 @@
 #include <time.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 uint64_t get_bit(unsigned char *encoded_data, int i)
