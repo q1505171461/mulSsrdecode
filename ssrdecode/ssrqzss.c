@@ -49,6 +49,9 @@ void reset_qzss_buff(ssrctx_t *sc)
 {
     sc->qbuff_beg = 0;
     sc->qbuff_end = 0;
+    memset(sc->qbuff, 0, sizeof(sc->qbuff));
+    sc->qzss_wait_new_subframe = 1;
+    sc->next_need_len = 37;
 }
 
 int prn2sys(int prn)
@@ -578,6 +581,7 @@ int decode_qzssr_type9(ssrctx_t *sc)
 
 int decode_qzssr_type10(ssrctx_t *sc)
 {
+    decode_qzssr_head(sc);
     sc->qzss_wait_new_subframe = 1;
     return 0;
 }
@@ -770,6 +774,11 @@ int decode_qzssr_type_other(ssrctx_t *sc)
     return 0;
 }
 
+uint8_t get_msg_type(ssrctx_t *sc)
+{
+    return get_bits(sc->qbuff, sc->qbuff_beg + 12, 4);
+}
+
 uint32_t heapup_preamb(uint32_t preamb, unsigned char data)
 {
     preamb <<= 8;
@@ -789,6 +798,41 @@ void copy_bits(unsigned char *target, int target_bit_start, unsigned char *sourc
     }
 }
 
+int check_next_4073(ssrctx_t *sc){
+    if (!sc->qbuff_beg)
+        return 1;
+    if (sc->qbuff_end - sc->qbuff_beg < sc->next_need_len)
+        return 1;
+    int qbuff_beg = sc->qbuff_beg;
+    int type = get_msg_type(sc);
+    switch (get_msg_type(sc))
+    {
+    case 0:
+        break;
+    case 4:
+        decode_qzssr_type4(sc, 0);
+        break;
+    case 6:
+        decode_qzssr_type6(sc, 0);
+        break;
+    case 11:
+        decode_qzssr_type11(sc, 0);
+        break;
+    case 12:
+        decode_qzssr_type12(sc, 0);
+        break;
+    default:
+        printf("error\n");
+        break;
+    }
+    type = get_msg_type(sc);
+    if (q_get_bits(sc, 0, 12) != 4073 && get_msg_type(sc) != 0)
+        return 0;
+    if (sc->qbuff_beg)
+        sc->qbuff_beg = qbuff_beg;
+    return 1;
+}
+
 void update_qbuff(ssrctx_t *sc)
 {
     if (sc->qzss_wait_new_subframe && !sc->subframe_indicator)
@@ -802,12 +846,11 @@ void update_qbuff(ssrctx_t *sc)
     sc->sub_n++;
     copy_bits(sc->qbuff, sc->qbuff_end, sc->buff, 89, 1695);
     sc->qbuff_end += 1695;
+    if (!check_next_4073(sc))
+        reset_qzss_buff(sc);
 }
 
-uint8_t get_msg_type(ssrctx_t *sc)
-{
-    return get_bits(sc->qbuff, sc->qbuff_beg + 12, 4);
-}
+
 
 int count_errors(const uint8_t *original_data, const uint8_t *decoded_data)
 {
@@ -856,6 +899,7 @@ static ssrctx_t *get_ssr_ctx_prn(ssrctx_t *sc)
 
 void printf_qzss(ssrctx_t *sc)
 {
+    return;
     printf("msg_type: %5d subframe_indicator: %5d ", sc->message_sub_type_id, sc->subframe_indicator);
     printf("message_number: %5d QZSSPRN: %5d ", sc->message_number, sc->prn);
     printf("gnss_hourly_epoch_t: %5d ", sc->gnss_hourly_epoch_t);
@@ -917,19 +961,20 @@ int decode_qzssr(ssrctx_t *user_ssr_ctx)
     int err_cnt = reed_solomon_decode(user_ssr_ctx);
     ssrctx_t *sc = get_ssr_ctx_prn(user_ssr_ctx);
 
+    if (sc->prn != 196)
+        return 0;
+    // if (get_alert_flag(sc))
+    //     return 0;
+    
     static int cnt_all = 0, cnt_err = 0;
     cnt_all++;
-    printf("n: %4d prn: %3d bad_c: %4d err: %1d err_cnt: %2d sub_flag: %d\n", cnt_all, sc->prn, cnt_err, err_cnt == -1 ? 1 : 0, err_cnt, sc->subframe_indicator);
+    // printf("n: %4d prn: %3d bad_c: %4d err: %1d err_cnt: %2d sub_flag: %d\n", cnt_all, sc->prn, cnt_err, err_cnt == -1 ? 1 : 0, err_cnt, sc->subframe_indicator);
     if (err_cnt == -1)
     {
         cnt_err++;
         sc->qzss_wait_new_subframe = 1;
         return 0;
     }
-    // if (sc->prn != 195)
-    //     return 0;
-    // if (get_alert_flag(sc))
-    //     return 0;
 
     update_qbuff(sc);
 
@@ -939,7 +984,7 @@ int decode_qzssr(ssrctx_t *user_ssr_ctx)
         if (type = switch_msg(sc))
         {
             memcpy(user_ssr_ctx, sc, sizeof(ssrctx_t));
-            if (type == 2 || type == 3 || type == 4 || type == 6 || type == 12)
+            if (type == 2 || type == 3 || type == 4)
                 update = 1;
             printf_qzss(sc);
         }
