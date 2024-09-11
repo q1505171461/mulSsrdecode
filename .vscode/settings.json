@@ -21,6 +21,9 @@
         "cstdlib": "c",
         "type_traits": "c",
         "io_b2b.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "ssr_.h": "c",
+        "types.h": "c",
+        "ctype.h": "c"
     }
 }

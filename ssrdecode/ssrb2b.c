@@ -1,15 +1,12 @@
 #include "ssr_.h"
-#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
-#include <stdio.h>
 #ifndef WIN32
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <time.h>
-#include "math.h"
+#include <math.h>
 #endif
 
 static uint32_t table_crc24q[] = {
@@ -378,7 +375,7 @@ static int decode_b2bssr_type4(ssrctx_t *sc)
     if (!sc->lvalid)
     {
         printf("warning: no valid mask  decoding orb corr at sod(bdt) %d\n", bdt);
-        return;
+        return 0;
     }
     offset += 4;
     uint8_t iodssr = b_offset_bits(sc, &offset, 2);

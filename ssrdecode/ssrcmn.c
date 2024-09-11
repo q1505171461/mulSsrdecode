@@ -1,9 +1,6 @@
 #include "ssr_.h"
-#include <time.h>
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sys/time.h>
 
 uint64_t get_bit(unsigned char *encoded_data, int i)
 {
@@ -145,11 +142,11 @@ extern gtime_t2 utc2gpst(gtime_t2 t)
     }
     return t;
 }
-struct timeval
-{
-    __time_t tv_sec;       /* Seconds.  */
-    __suseconds_t tv_usec; /* Microseconds.  */
-};
+// struct timeval
+// {
+//     __time_t tv_sec;       /* Seconds.  */
+//     __suseconds_t tv_usec; /* Microseconds.  */
+// };
 /* convert calendar day/time to time -------------------------------------------
  * convert calendar day/time to gtime_t2 struct
  * args   : double *ep       I   day/time {year,month,day,hour,min,sec}
@@ -275,7 +272,7 @@ extern double time2gpst(gtime_t2 t, int *week)
  *          int    n         I   number of decimals
  * return : none
  *-----------------------------------------------------------------------------*/
-extern void time2str(gtime_t2 t, char *s, int n)
+void time2str(gtime_t2 t, char *s, int n)
 {
     double ep[6];
 
