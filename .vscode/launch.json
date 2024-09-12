@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug pppb2bEncode",
+            "name": "Debug kplb2bEncode",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/encode/debug/pppb2bEncode",
@@ -19,14 +19,35 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build pppb2bEncode",
+            "preLaunchTask": "build kplb2bEncode",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug kplb2bDecode",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/decode/debug/pppb2bDecode",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build kplb2bDecode",
             "miDebuggerPath": "/usr/bin/gdb"
         },
         {
             "name": "Debug pppb2bDecode",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/decode/debug/pppb2bDecode",
+            "program": "${workspaceFolder}/b2b/debug/ssrDecode",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

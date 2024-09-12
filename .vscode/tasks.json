@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build pppb2bEncode",
+            "label": "build kplb2bEncode",
             "type": "shell",
             "command": "[ ! -d encode/debug ] && mkdir encode/debug;cd encode/debug ;if [ -f pppb2bEncode ]; then rm pppb2bEncode; fi; cmake ..;cmake --build . --target pppb2bEncode ; cd ../..",
             "group": {
@@ -12,9 +12,19 @@
             "problemMatcher": "$gcc"
         },
         {
-            "label": "build pppb2bDecode",
+            "label": "build kplb2bDecode",
             "type": "shell",
             "command": "[ ! -d decode/debug ] && mkdir decode/debug;cd decode/debug; if [ -f pppb2bDecode ]; then rm pppb2bDecode; fi; cmake ..;cmake --build . --target pppb2bDecode ; cd ../",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "build pppb2bDecode",
+            "type": "shell",
+            "command": "[ ! -d b2b/debug ] && mkdir b2b/debug;cd b2b/debug; if [ -f ssrDecode ]; then rm -f ssrDecode; fi; cmake ..;cmake --build . --target all ; cd ../..",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -35,17 +45,6 @@
             "label": "build ssrDecode",
             "type": "shell",
             "command": "[ ! -d ssrdecode/debug ] && mkdir ssrdecode/debug;cd ssrdecode/debug; cmake ..;cmake --build . --target all; cd ../",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "dependsOn": "rm test_exe",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "build ssrDecodezzy",
-            "type": "shell",
-            "command": "[ ! -d ssrdecodezzy/debug ] && mkdir ssrdecodezzy/debug;cd ssrdecodezzy/debug; cmake ..;cmake --build . --target all; cd ../",
             "group": {
                 "kind": "build",
                 "isDefault": true

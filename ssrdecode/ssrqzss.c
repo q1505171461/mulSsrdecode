@@ -822,7 +822,6 @@ int check_next_4073(ssrctx_t *sc){
         decode_qzssr_type12(sc, 0);
         break;
     default:
-        printf("error\n");
         break;
     }
     type = get_msg_type(sc);
@@ -850,8 +849,6 @@ void update_qbuff(ssrctx_t *sc)
         reset_qzss_buff(sc);
 }
 
-
-
 int count_errors(const uint8_t *original_data, const uint8_t *decoded_data)
 {
     int error_count = 0;
@@ -865,9 +862,10 @@ int count_errors(const uint8_t *original_data, const uint8_t *decoded_data)
     return error_count;
 }
 
-correct_reed_solomon *rs = 0;
+
 int reed_solomon_decode(ssrctx_t *sc)
 {
+    static correct_reed_solomon *rs = 0;
     if (!rs)
         rs = correct_reed_solomon_create(correct_rs_primitive_polynomial_ccsds, 112, 11, 32);
     unsigned char encoded_msg[255] = {0};
@@ -961,14 +959,14 @@ int decode_qzssr(ssrctx_t *user_ssr_ctx)
     int err_cnt = reed_solomon_decode(user_ssr_ctx);
     ssrctx_t *sc = get_ssr_ctx_prn(user_ssr_ctx);
 
-    if (sc->prn != 196)
-        return 0;
+    // if (sc->prn != 195)
+    //     return 0;
     // if (get_alert_flag(sc))
     //     return 0;
     
     static int cnt_all = 0, cnt_err = 0;
     cnt_all++;
-    // printf("n: %4d prn: %3d bad_c: %4d err: %1d err_cnt: %2d sub_flag: %d\n", cnt_all, sc->prn, cnt_err, err_cnt == -1 ? 1 : 0, err_cnt, sc->subframe_indicator);
+    printf("n: %4d prn: %3d bad_c: %4d err: %1d err_cnt: %2d sub_flag: %d\n", cnt_all, sc->prn, cnt_err, err_cnt == -1 ? 1 : 0, err_cnt, sc->subframe_indicator);
     if (err_cnt == -1)
     {
         cnt_err++;
