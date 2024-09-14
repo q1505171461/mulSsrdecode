@@ -38,6 +38,7 @@ typedef struct
     double pbias[MAXCODE]; /* phase biases (m) */
     unsigned char update;  /* update flag (0:no update,1:update) */
 
+    char prnstr[8];         /* sat id like G01 */
     double stura;       /* SSR STEC Quality Indicator */
     int sctype;         /* STEC Correction Type 0~3 */
     double c00;         /* STEC Polynomial Coefficients C00 */

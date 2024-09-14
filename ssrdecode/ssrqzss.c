@@ -878,6 +878,11 @@ int reed_solomon_decode(ssrctx_t *sc)
     rebasex(sc->buff);
     return decoded_length != -1 ? errcnt : -1;
 }
+void set_prnstr(ssrctx_t *sc){
+    for (int i=0; i < MAXSSRSAT; ++i){
+        prn2str(i, sc->ssr_epoch[i].prnstr);
+    }
+}
 
 static ssrctx_t *get_ssr_ctx_prn(ssrctx_t *sc)
 {
@@ -888,6 +893,7 @@ static ssrctx_t *get_ssr_ctx_prn(ssrctx_t *sc)
         ssr_ctxs[prn] = calloc(1, sizeof(ssrctx_t));
         ssr_ctxs[prn]->next_need_len = 37;
         ssr_ctxs[prn]->qzss_wait_new_subframe = 1;
+        set_prnstr(ssr_ctxs[prn]);
     }
     memcpy(ssr_ctxs[prn]->buff, sc->buff, 250);
     ssr_ctxs[prn]->prn = prn;
