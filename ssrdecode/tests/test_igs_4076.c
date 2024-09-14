@@ -36,7 +36,7 @@ void print_rtcmssr(rtcm_t *sc)
             printf("%s   PRN: %d   IODSSR: %2d   NUM:%3d\n", s, 1, 1, satnum); // head
         }
         /* prn */
-        prn2str(i, prnstr);
+        satno2id(i,prnstr);
         printf("%s", prnstr);
 
         /* orb */
