@@ -3,7 +3,7 @@
 graph TD;
     A[input_qzssr] --> A1{reed-solomon校验};
     A1 -->|是| B[判断卫星号获取相应ssrctx_t];
-    A1 -->|否| A;
+    A1 --等待-->|否| A;
     B --> C[拼接buffer];
     C --> D{判断下一个码类型是否为4073避免丢包导致的数据异常}
     D -->|是| E[解码数据更新ssrctx_t];
