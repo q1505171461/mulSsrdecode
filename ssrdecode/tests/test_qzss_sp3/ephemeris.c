@@ -711,7 +711,7 @@ extern int ephpos(gtime_t time, gtime_t teph, int sat, const nav_t *nav,
 extern int satpos_ssr(gtime_t time, gtime_t teph, int sat, const nav_t *nav,
                       int opt, double *rs, double *dts, double *var, int *svh)
 {
-    const ssr_t *ssr;
+    const ssr_t2 *ssr;
     eph_t *eph;
     double t1, t2, t3, er[3], ea[3], ec[3], rc[3], deph[3], dclk, dant[3] = {0}, tk;
     int i, sys;

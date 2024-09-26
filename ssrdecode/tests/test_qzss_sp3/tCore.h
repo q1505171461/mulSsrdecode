@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include "list.h"
 
 // #define ARM 1
@@ -444,7 +445,7 @@ extern "C"
         time_t time; /* time (s) expressed by standard time_t */
         double sec;  /* fraction of second under 1 s */
     } gtime_t;
-
+    #include "ssr.h"
     typedef struct
     {                                 /* observation data record */
         gtime_t time;                 /* receiver sampling time (GPST) */
@@ -780,6 +781,7 @@ extern "C"
         nav_t nav;                              /* satellite ephemerides */
         sta_t sta;                              /* station parameters */
         ssr_t2 ssr[MAXSAT];                      /* output of ssr corrections */
+        ssr_t ssss;
         char msg[128];                          /* special message */
         char msgtype[256];                      /* last message type */
         char msmtype[7][128];                   /* msm signal types */

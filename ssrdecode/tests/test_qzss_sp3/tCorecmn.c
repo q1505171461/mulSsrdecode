@@ -73,7 +73,7 @@
  *           2013/09/06 1.25 fix bug on extrapolation of erp
  *           2014/04/27 1.26 add SYS_LEO for satellite system
  *                           add BDS L1 code for RINEX 3.02 and RTCM 3.2
- *                           support BDS L1 in satwavelen()
+ *                           support BDS L1 in satwavelen()g:\C
  *           2014/05/29 1.27 fix bug on obs2code() to search obs code table
  *           2014/08/26 1.28 fix problem on output of uncompress() for tar file
  *                           add function to swap trace file with keywords
@@ -145,10 +145,12 @@ static const double bdt0[] = {2006, 1, 1, 0, 0, 0};  /* beidou time reference */
 #define GMS 1.327124E+20 /* sun gravitational constant */
 #define GMM 4.902801E+12 /* moon gravitational constant */
 /* -------------------------SELF DEFINED VARIABLE------------------------------- */
-int nprn_ = 59; /* global nprn, reading from configure file*/
+int nprn_ = 59+37; /* global nprn, reading from configure file*/
 char cprn_[MAXSAT][LEN_PRN] =  {
     "G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13", "G14", "G15", "G16", "G17", "G18", "G19", "G20", "G21", "G22", "G23", "G24", "G25", "G26", "G27", "G28", "G29", "G30", "G31", "G32",
     "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C27", "C28", "C29", "C30", "C32", "C33", "C34", "C35", "C36", "C37", "C38", "C39", "C40", "C41", "C42", "C43", "C44", "C45", "C46",
+    "E01", "E02", "E03", "E04", "E05", "E06", "E07", "E08", "E09", "E10", "E11", "E12", "E13", "E14", "E15", "E16", "E17", "E18", "E19", "E20", "E21", "E22", "E23", "E24", "E25", "E26", "E27", "E28", "E29", "E30", "E31", "E32", 
+    "J01", "J02", "J03", "J04", "J05", 
    }; /* global cprn list, reading from configure file */
 const prcopt_t prcopt_default =
     {

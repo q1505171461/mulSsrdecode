@@ -24,6 +24,8 @@
         "typeinfo": "c",
         "ssr_.h": "c",
         "types.h": "c",
-        "ctype.h": "c"
-    }
+        "ctype.h": "c",
+        "io_rtcm.h": "c"
+    },
+    "cmake.sourceDirectory": "/root/project_hu/ssrdecode/libcorrect/util"
 }

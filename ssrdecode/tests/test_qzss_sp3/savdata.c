@@ -362,7 +362,7 @@ static int outputsp3(gtime_t td, int sat, nav_t *nav, double *rs, int ditv)
     }
     time2epoch(td, ep);
     if (((int)ep[5]) % ditv == 0)
-        if ((lorb = satpos_ssr(td, td, sat, nav, 0, xsat, dts, &var, &svh)))
+        if (lorb = satpos_ssr(td, td, sat, nav, 0, xsat, dts, &var, &svh))
         // fprintf(getFileptr(td, NULL, NULL, "sp3"), "%4d%3d%3d%3d%3d%12.8lf P%s%14.6lf%14.6lf%14.6lf%14.6lf\n" , (int)ep[0], (int)ep[1], (int)ep[2], (int)ep[3], (int)ep[4], ep[5], cprn, xsat[0] / 1000, xsat[1] / 1000, xsat[2] / 1000, 999.0);
         // fflush(getFileptr(td, NULL, NULL, "sp3"));
         {

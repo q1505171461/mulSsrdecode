@@ -1,3 +1,5 @@
+#ifndef SSR_H
+#define SSR_H
 #include <stdint.h>
 #include <time.h>
 
@@ -10,15 +12,17 @@
 #define MAXGRID 50
 #define QZSSSIGNUM 16
 
+#if !defined(RTKLIB_H) && !defined(INCLUDE_TINYCORE_H_)
 typedef struct
 {                /* time struct */
     time_t time; /* time (s) expressed by standard time_t */
     double sec;  /* fraction of second under 1 s */
-} gtime_t2;
+} gtime_t;
+#endif
 
 typedef struct
 {                    /* SSR correction type */
-    gtime_t2 t0[6];   /* epoch time (GPST) {eph,clk,hrclk,ura,cbias,pbias} */
+    gtime_t t0[6];   /* epoch time (GPST) {eph,clk,hrclk,ura,cbias,pbias} */
     double udi[5];   /* SSR update interval (s) */
     int iod[5];      /* iod ssr {eph,clk,hrclk,ura,bias} */
     int iode;        /* issue of data */
@@ -31,14 +35,18 @@ typedef struct
     double hrclk;    /* high-rate clock corection (m) */
     double yaw;
     int8_t IODCorr;
-    double yawrate;
     int f_cbias[MAXCODE];
     float cbias[MAXCODE]; /* code biases (m) */
     int f_pbias[MAXCODE];
-    double pbias[MAXCODE]; /* phase biases (m) */
-    unsigned char update;  /* update flag (0:no update,1:update) */
+    double pbias[MAXCODE];    /* phase biases (m) */
+    gtime_t ifpb_t0;          /* t0 for ifpb */
+    double ifpb;              /* ifpb for GPS satellites */
+    float stdpb[MAXCODE];     /* std-dev of phase biases (m) */
+    double quateratt[4];      /* attitude quaterniond, w/x/y/z */
+    double yaw_ang, yaw_rate; /* yaw angle and yaw rate (deg,deg/s) */
+    unsigned char update;     /* update flag (0:no update,1:update) */
 
-    char prnstr[8];         /* sat id like G01 */
+    char prnstr[8];     /* sat id like G01 */
     double stura;       /* SSR STEC Quality Indicator */
     int sctype;         /* STEC Correction Type 0~3 */
     double c00;         /* STEC Polynomial Coefficients C00 */
@@ -56,7 +64,7 @@ typedef struct
     double sigma;
     double rect[4];
 
-    gtime_t2 t0;
+    gtime_t t0;
     int networkcorr; /* Type11 Network Correction */
     int tavail;
     int cnid;
@@ -81,7 +89,7 @@ typedef struct
 {
     unsigned char buff[SSRCTX_BUFFLEN]; /* binary data */
     int nbyte;                          /* number of bits in word buffer */
-    gtime_t2 BDT;                        // 北斗时天内秒
+    gtime_t BDT;                        // 北斗时天内秒
     uint8_t IODSSR;                     // SSR 版本号 2bit
     uint8_t IODP;                       // 掩码版本号 4bit
     uint16_t IODN;                      // 基本导航电文版本号 10bit
@@ -125,3 +133,5 @@ extern int input_kplssr(ssrctx_t *, unsigned char);
 extern int input_qzssr(ssrctx_t *, unsigned char);
 extern int input_galssr(ssrctx_t *, unsigned char);
 extern int index_string(const char *src, char key);
+
+#endif

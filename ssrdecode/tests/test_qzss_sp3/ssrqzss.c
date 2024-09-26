@@ -1,4 +1,3 @@
-#include "ssr.h"
 #include "tCore.h"
 #include <ctype.h>
 #include <errno.h>
@@ -14,6 +13,8 @@
 
 #include "tinyppp.h"
 #include "IO_rtcm.h"
+gtime_t aa;
+#include "ssr.h"
 
 static FILE *fssr;
 static FILE *fbias;
@@ -584,29 +585,31 @@ int b2bdecodert_kx(char *b2bpath)
     while (1)
     {
         int nread = strread(&m_unsyncConn, buff, 1024);
-        for (int i = 0; i < nread; i++)
-            printf("%c", buff[i]);
+        // for (int i = 0; i < nread; i++)
+        //     printf("%c", buff[i]);
 
         if (nread > 0)
-            printf("%d\n", nread);
+            printf("nread: %d\n", nread);
         for (int i = 0; i < nread; ++i)
         {
-            if (input_qzssr(&ssr_ctx, buff[i]))
+            if (input_qzssr(&ssr_ctx, buff[i])){
+                print_ssr(&ssr_ctx);
                 for (int j = 0; j < nprn_; j++)
                 {
                     char id[8];
-                    satno2id(j, id);
+                    satno2id(j+1, id);
                     int k;
                     for (k = 0; k < MAXSSRSAT; ++k)
                     {
                         if (0 == strcmp(id, ssr_ctx.ssr_epoch[k].prnstr))
                         {
                             int a = sizeof(ssr_ctx.ssr_epoch);
-                            memcpy(g_sdk_nav.ssr + i, ssr_ctx.ssr_epoch + k, sizeof(ssr_t2));
+                            memcpy(g_sdk_nav.ssr + j, ssr_ctx.ssr_epoch + k, sizeof(ssr_t2));
                             break;
                         }
                     }
                 }
+            }
         }
         if (nread == 0)
             sleepms(100);
@@ -630,7 +633,7 @@ int main()
     fssr = fopen("res/workspace/ephclk.ssr", "w");
     fbias = fopen("res/workspace/bias.ssr", "w");
     {
-        char *strpath = ":123@119.96.242.26:15026/B2B1_RTCM33";
+        char *strpath = ":0000@119.96.242.26:15026/L6C1_RTCM33";
         b2bdecodert_kx(strpath);
     }
     fclose(fssr);

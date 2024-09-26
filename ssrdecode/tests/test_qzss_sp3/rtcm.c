@@ -68,7 +68,7 @@ extern int init_rtcm(rtcm_t *rtcm)
     obsd_t data0 = {{0}};
     eph_t eph0 = {0, -1, -1};
     geph_t geph0 = {0, -1};
-    ssr_t ssr0 = {{{0}}};
+    ssr_t2 ssr0 = {{{0}}};
     int i, j;
 
     trace(3, "init_rtcm:\n");

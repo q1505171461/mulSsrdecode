@@ -114,16 +114,16 @@ int64_t uint64_to_int64(uint64_t value, uint8_t originalLen);
 static uint32_t crc24_pppB2b(uint8_t *data, uint16_t length);
 
 const static double gpst0[] = {1980, 1, 6, 0, 0, 0}; /* gps time reference */
-gtime_t2 timeadd(gtime_t2 t, double sec);
-gtime_t2 epoch2time(const double *ep);
-void time2epoch(gtime_t2 t, double *ep);
-gtime_t2 utc2gpst(gtime_t2 t);
-gtime_t2 timeget(void);
+gtime_t timeadd(gtime_t t, double sec);
+gtime_t epoch2time(const double *ep);
+void time2epoch(gtime_t t, double *ep);
+gtime_t utc2gpst(gtime_t t);
+gtime_t timeget(void);
 uint8_t obs2code3(const char *obs);
-gtime_t2 bdt2gpst(gtime_t2 t);
-double timediff(gtime_t2 t1, gtime_t2 t2);
-double time2gpst(gtime_t2 t, int *week);
-void time2str(gtime_t2 t, char *s, int n);
-gtime_t2 gpst2time(int week, double sec);
+gtime_t bdt2gpst(gtime_t t);
+double timediff(gtime_t t1, gtime_t t2);
+double time2gpst(gtime_t t, int *week);
+void time2str(gtime_t t, char *s, int n);
+gtime_t gpst2time(int week, double sec);
 void prn2str(int prn, char *prnstr);
 double ura2dist(uint8_t ura);
