@@ -9,16 +9,11 @@
 - **res/**  
   解码数据源及输出。
 
-- **rtklib2/**  
-
 - **ssrdecode/**  
   该目录包含 SSR 解码器的相关代码和测试。
 
 - **diff.py**  
   Python 脚本，输出 SSR 的每历元间输出差异。
-
-- **readme.md**  
-  项目的 README 文件，提供概述和使用说明。
 
 ## L6解码流程图
 ```mermaid
