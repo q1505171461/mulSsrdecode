@@ -19,6 +19,7 @@ add_definitions(-std=c99)
 file(GLOB SOURCES "*.c")
 
 add_library(mydecode SHARED ${SOURCES})
+target_link_libraries(mydecode correct m pthread mydecode)
 
 function(add_my_executable exe_name)
     add_executable(${exe_name}  ${ARGN})

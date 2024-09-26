@@ -16,7 +16,7 @@ int main()
     file = fopen("res/qzssl6_com1.log", "rb");
     file = fopen("res/9-12qzss/com15_3rdCOM.txt", "rb");
     file = fopen("res/9-12gs/com_10 20240912-1", "rb");
-    file = fopen("res/9-20qzss/COM15_20240920", "rb");
+    file = fopen("res/9-25qzss/COM15_20240924", "rb");
     if (file == NULL)
         return 1;
     unsigned char data;
